@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>給与アシスト｜合同会社アシスト建物管理</title>
+<style>
+  :root {
+    /* やさしい太陽テーマ（アシスト労務と共通） */
+    --blue: #E8873A;
+    --blue-dark: #C96A1E;
+    --sun-soft: #F7DDBF;
+    --bg: #FBF6ED;
+    --card: #ffffff;
+    --border: #EDE2CE;
+    --text: #3A3530;
+    --muted: #6B5F52;
+    --danger: #C65D4B;
+    --success: #4A7C6F;
+    --warning: #C08A2B;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-text-size-adjust: 100%;
+  }
+  #app { max-width: 1000px; margin: 0 auto; min-height: 100vh; background: var(--bg); }
+
+  /* ---------- ヘッダー ---------- */
+  header.topbar {
+    background: var(--blue);
+    color: #fff;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky; top: 0; z-index: 40;
+  }
+  header.topbar .logo { font-size: 22px; }
+  header.topbar h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: .02em; }
+  header.topbar .sub { font-size: 11px; opacity: .9; margin-top: 2px; }
+  header.topbar .spacer { flex: 1; }
+  .top-btn {
+    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.5);
+    color: #fff; border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+    font-family: inherit;
+  }
+  .top-btn:hover { background: rgba(255,255,255,.3); }
+  .sync-dot { font-size: 11px; opacity: .95; display: flex; align-items: center; gap: 5px; }
+  .sync-dot i { width: 8px; height: 8px; border-radius: 50%; background: #fff; display: inline-block; }
+  .sync-dot.ok i { background: #B7F0C0; }
+  .sync-dot.ng i { background: #FFD1C7; }
+
+  /* ---------- タブ ---------- */
+  nav.tabs {
+    display: flex; background: #fff; border-bottom: 1px solid var(--border);
+    position: sticky; top: 56px; z-index: 30; overflow-x: auto;
+  }
+  nav.tabs button {
+    flex: 1 0 auto; min-width: 96px; background: none; border: none; cursor: pointer;
+    padding: 13px 10px 11px; font-size: 13px; font-weight: 700; color: var(--muted);
+    border-bottom: 3px solid transparent; font-family: inherit; white-space: nowrap;
+  }
+  nav.tabs button.active { color: var(--blue-dark); border-bottom-color: var(--blue); }
+
+  main { padding: 18px 16px 60px; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ---------- パーツ ---------- */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 15px; margin: 0 0 14px; display: flex; align-items: center; gap: 7px; }
+  .card h3 { font-size: 13px; margin: 18px 0 10px; color: var(--muted); }
+  .muted { color: var(--muted); font-size: 12px; }
+  .hint { background: #FFF8EC; border: 1px solid var(--sun-soft); border-radius: 10px;
+          padding: 10px 12px; font-size: 12px; color: #6B5233; line-height: 1.7; }
+  .hint b { color: #A5651A; }
+
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 700px) {
+    .grid2, .grid3, .grid4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 460px) {
+    .grid2, .grid3, .grid4 { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11.5px; color: var(--muted); font-weight: 700; }
+  input[type=text], input[type=number], input[type=date], input[type=month],
+  input[type=password], input[type=email], select, textarea {
+    font-family: inherit; font-size: 14px; color: var(--text);
+    border: 1px solid var(--border); border-radius: 9px; padding: 9px 10px;
+    background: #fff; width: 100%;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--sun-soft); border-color: var(--blue); }
+  input[type=number] { text-align: right; font-variant-numeric: tabular-nums; }
+  textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  .chk { display: flex; align-items: center; gap: 7px; font-size: 13px; padding: 8px 0; cursor: pointer; }
+  .chk input { width: 17px; height: 17px; accent-color: var(--blue); }
+
+  .btn {
+    background: var(--blue); color: #fff; border: none; border-radius: 10px;
+    padding: 11px 18px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+  }
+  .btn:hover { background: var(--blue-dark); }
+  .btn.sub { background: #fff; color: var(--blue-dark); border: 1.5px solid var(--blue); }
+  .btn.sub:hover { background: #FCF1E2; }
+  .btn.gray { background: #fff; color: var(--muted); border: 1.5px solid var(--border); }
+  .btn.gray:hover { background: #F6F1E7; }
+  .btn.danger { background: #fff; color: var(--danger); border: 1.5px solid var(--danger); }
+  .btn.danger:hover { background: #FBEDEA; }
+  .btn.sm { padding: 6px 11px; font-size: 12px; border-radius: 8px; }
+  .btn:disabled { opacity: .45; cursor: default; }
+
+  table.list { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.list th {
+    background: #FBF6ED; color: var(--muted); font-size: 11.5px; text-align: left;
+    padding: 9px 10px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  table.list td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  table.list tr:last-child td { border-bottom: none; }
+  table.list td.num, table.list th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .table-wrap { overflow-x: auto; margin: 0 -4px; }
+
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+  .pill.on  { background: #EAF4F1; color: var(--success); }
+  .pill.off { background: #F3EFE7; color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); font-size: 13px; padding: 26px 10px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+    background: #3A3530; color: #fff; padding: 11px 20px; border-radius: 999px;
+    font-size: 13px; z-index: 200; opacity: 0; pointer-events: none; transition: opacity .25s;
+    max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: .95; }
+
+  /* ---------- 計算結果サマリ ---------- */
+  .sumgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 560px) { .sumgrid { grid-template-columns: 1fr; } }
+  .sumbox { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; background: #fff; }
+  .sumbox .lb { font-size: 11.5px; color: var(--muted); font-weight: 700; }
+  .sumbox .vl { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 3px; }
+  .sumbox.net { background: #FFF8EC; border-color: var(--sun-soft); }
+  .sumbox.net .vl { color: var(--blue-dark); }
+
+  .calcrow { display: flex; justify-content: space-between; gap: 10px; padding: 7px 2px;
+             border-bottom: 1px dashed var(--border); font-size: 13px; }
+  .calcrow:last-child { border-bottom: none; }
+  .calcrow .vl { font-variant-numeric: tabular-nums; font-weight: 700; }
+  .calcrow.total { border-bottom: none; border-top: 2px solid var(--border); margin-top: 4px; padding-top: 9px; }
+  .calcrow input { width: 118px; text-align: right; padding: 5px 8px; font-size: 13px; }
+
+  /* ---------- 初期設定 / ログイン ---------- */
+  .gate {
+    position: fixed; inset: 0; background: var(--bg); z-index: 100;
+    display: flex; align-items: center; justify-content: center; padding: 22px;
+  }
+  .gate.hidden { display: none; }
+  .gate-box { width: 100%; max-width: 420px; text-align: center; }
+  .gate-box .mark { font-size: 44px; }
+  .gate-box h2 { margin: 10px 0 4px; font-size: 20px; }
+  .gate-box p.lead { margin: 0 0 20px; font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+  .lock-input {
+    width: 100%; text-align: center; font-size: 20px; letter-spacing: .22em;
+    padding: 13px; border: 1.5px solid var(--border); border-radius: 12px; background: #fff;
+  }
+  .lock-input.error { border-color: var(--danger); animation: shake .3s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  .lock-btn { width: 100%; margin-top: 12px; background: var(--blue); color: #fff; border: none;
+              border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer;
+              font-family: inherit; }
+  .lock-error { color: var(--danger); font-size: 12.5px; min-height: 20px; margin-top: 9px; }
+
+  /* ---------- 給与明細（アシスト労務と同じ台紙レイアウト） ---------- */
+  .payslip-wrap { overflow-x: auto; padding: 4px 0 2px; }
+  .payslip-sheet {
+    background: #fff; border: 2px solid #2AA9D8; border-radius: 2px;
+    max-width: 720px; min-width: 660px; margin: 0 auto; font-size: 12.5px; color: #1a1a1a;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+  }
+  .payslip-sheet .ps-head { display: flex; border-bottom: 2px solid #2AA9D8; }
+  .payslip-sheet .ps-head > div { padding: 8px 12px; border-right: 2px solid #2AA9D8; }
+  .payslip-sheet .ps-head > div:last-child { border-right: none; }
+  .payslip-sheet .ps-code { width: 90px; color: #2AA9D8; font-weight: 700; font-size: 11px; }
+  .payslip-sheet .ps-code b { display: block; color: #1a1a1a; font-size: 13px; margin-top: 2px; }
+  .payslip-sheet .ps-name { flex: 1; font-size: 16px; font-weight: 700; }
+  .payslip-sheet .ps-name .ps-branch { font-size: 11px; color: #666; font-weight: 400; margin-left: 8px; }
+  .payslip-sheet .ps-month { width: 210px; flex: 0 0 210px; font-size: 13px; font-weight: 700; text-align: right; line-height: 1.4; }
+  .payslip-sheet .ps-month span { display: block; font-size: 9.5px; color: #666; font-weight: 400; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .payslip-sheet .ps-attend { display: flex; border-bottom: 2px solid #2AA9D8; align-items: stretch; }
+  .payslip-sheet .ps-attend-label {
+    width: 44px; background: #E7F7FC; color: #2AA9D8; font-weight: 700; font-size: 13px;
+    display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.3;
+    border-right: 2px solid #2AA9D8; padding: 6px 0; flex: 0 0 44px;
+  }
+  .payslip-sheet .ps-attend-items { display: flex; flex-wrap: wrap; flex: 1; }
+  .payslip-sheet .ps-attend-item {
+    min-width: 74px; flex: 1 1 12.5%; padding: 6px 8px;
+    border-right: 1px solid #BFE8F4; border-bottom: none;
+  }
+  .payslip-sheet .ps-attend-item .lb { font-size: 10.5px; color: #2AA9D8; }
+  .payslip-sheet .ps-attend-item .vl { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .payslip-sheet .ps-body { display: flex; border-bottom: 2px solid #2AA9D8; }
+  .payslip-sheet .ps-col { flex: 1; display: flex; min-width: 0; }
+  .payslip-sheet .ps-col:first-child { border-right: 2px solid #2AA9D8; }
+  .payslip-sheet .ps-col-label {
+    width: 30px; flex: 0 0 30px; background: #E7F7FC; color: #2AA9D8; font-weight: 700; font-size: 13px;
+    display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.3;
+    border-right: 2px solid #2AA9D8;
+  }
+  .payslip-sheet .ps-col-items { flex: 1; min-width: 0; }
+  .payslip-sheet .ps-item-row {
+    display: flex; justify-content: space-between; padding: 6px 10px;
+    border-bottom: 1px solid #BFE8F4; font-size: 12px;
+  }
+  .payslip-sheet .ps-item-row:last-child { border-bottom: none; }
+  .payslip-sheet .ps-item-row .lb { color: #333; }
+  .payslip-sheet .ps-item-row .vl { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .payslip-sheet .ps-item-row.ps-empty { color: #bbb; }
+  .payslip-sheet .ps-item-row.ps-sum { background: #F4FBFE; }
+
+  .payslip-sheet .ps-totals { display: flex; border-bottom: 2px solid #2AA9D8; }
+  .payslip-sheet .ps-totals > div { flex: 1; padding: 8px 4px; text-align: center; border-right: 1px solid #BFE8F4; }
+  .payslip-sheet .ps-totals > div:last-child { border-right: none; }
+  .payslip-sheet .ps-totals .lb { font-size: 10.5px; color: #2AA9D8; }
+  .payslip-sheet .ps-totals .vl { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .payslip-sheet .ps-net { display: flex; align-items: center; background: #E7F7FC; }
+  .payslip-sheet .ps-net .lb { width: 120px; padding: 10px 12px; color: #2AA9D8; font-weight: 700; font-size: 13px; }
+  .payslip-sheet .ps-net .vl { flex: 1; text-align: right; padding: 10px 16px; font-size: 22px; font-weight: 700;
+                               font-variant-numeric: tabular-nums; }
+  .payslip-sheet .ps-foot { padding: 8px 12px; font-size: 10.5px; color: #666; border-top: 2px solid #2AA9D8; }
+
+  /* ---------- 印刷 ---------- */
+  @media print {
+    body { background: #fff; }
+    body * { visibility: hidden; }
+    .no-print { display: none !important; }
+    .payslip-preview, .payslip-preview * { visibility: visible; }
+    .payslip-preview {
+      position: absolute; top: 0; left: 0; width: 100%;
+      border: none; padding: 0; margin: 0; border-radius: 0; box-shadow: none; background: #fff;
+    }
+    .payslip-wrap { overflow: visible; }
+    .payslip-sheet { min-width: 0; max-width: 100%; page-break-inside: avoid; }
+    .ledger-print, .ledger-print * { visibility: visible; }
+    .ledger-print { position: absolute; top: 0; left: 0; width: 100%; border: none; margin: 0; padding: 0; }
+    .ledger-print table.list { font-size: 9.5px; }
+    .ledger-print table.list th, .ledger-print table.list td { padding: 4px 3px; }
+    .table-wrap { overflow: visible !important; }
+    @page { size: A4; margin: 12mm; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== 初期設定 ===================== -->
+<div class="gate" id="setupGate">
+  <div class="gate-box" style="max-width:520px">
+    <div class="mark">🌤️</div>
+    <h2>給与アシスト</h2>
+    <p class="lead">はじめに一度だけ、Firebase の設定を貼り付けてください。<br>
+      GitHub の <b>kaikei-assist</b> リポジトリにある会計ページ（assistbuildingmgmt.html）の
+      いちばん下に書いてある <code>config: { … }</code> の中身です。</p>
+    <div class="card" style="text-align:left">
+      <div class="field">
+        <label>Firebase の設定（{ } ごと貼り付け）</label>
+        <textarea id="setupConfig" placeholder='{
+  apiKey: "…",
+  authDomain: "…",
+  projectId: "…",
+  appId: "…",
+  databaseURL: "https://…firebasedatabase.app"
+}'></textarea>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>ログインID（メールアドレス）</label>
+        <input type="text" id="setupEmail" placeholder="hm.info.keiri+assist@gmail.com">
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>データベースのURL（設定に入っていれば空のままでOK）</label>
+        <input type="text" id="setupDbUrl" placeholder="https://…-default-rtdb.asia-southeast1.firebasedatabase.app">
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>保存先のキー（そのままで大丈夫です）</label>
+        <input type="text" id="setupPath" value="companies/assist/kyuyo">
+      </div>
+      <button class="btn" style="width:100%;margin-top:16px" id="setupSaveBtn">この設定で始める</button>
+      <button class="btn gray" style="width:100%;margin-top:8px" id="setupSkipBtn">この端末だけで使う（あとで設定する）</button>
+      <div class="lock-error" id="setupError"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== ログイン ===================== -->
+<div class="gate hidden" id="lockScreen">
+  <div class="gate-box">
+    <div class="mark">🔒</div>
+    <h2>給与アシスト</h2>
+    <p class="lead">合同会社アシスト建物管理<br>パスワードを入力してください</p>
+    <form id="loginForm" autocomplete="on">
+      <input id="loginEmail" name="username" type="email" autocomplete="username" hidden>
+      <input id="lockInput" name="password" type="password" autocomplete="current-password"
+             class="lock-input" placeholder="••••••••">
+      <button id="loginBtn" type="submit" class="lock-btn">ログイン</button>
+    </form>
+    <div class="lock-error" id="lockError"></div>
+    <button class="btn gray sm" style="margin-top:14px" id="reSetupBtn">設定をやりなおす</button>
+  </div>
+</div>
+
+<!-- ===================== 本体 ===================== -->
+<div id="app">
+  <header class="topbar">
+    <div class="logo">🌤️</div>
+    <div>
+      <h1>給与アシスト</h1>
+      <div class="sub" id="companyLabel">合同会社アシスト建物管理</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="sync-dot" id="syncDot"><i></i><span>—</span></div>
+    <button class="top-btn" id="saveCloudBtn">保存</button>
+    <button class="top-btn" id="logoutBtn">ログアウト</button>
+  </header>
+
+  <nav class="tabs">
+    <button data-page="pay"      class="active">給与計算</button>
+    <button data-page="emp">従業員</button>
+    <button data-page="ledger">賃金台帳</button>
+    <button data-page="setting">設定</button>
+  </nav>
+
+  <main>
+
+    <!-- ========== 給与計算 ========== -->
+    <section class="page active" id="page-pay">
+      <div class="card no-print">
+        <h2>🗓️ 対象を選ぶ</h2>
+        <div class="grid3">
+          <div class="field">
+            <label>対象年月</label>
+            <input type="month" id="payMonth">
+          </div>
+          <div class="field">
+            <label>従業員</label>
+            <select id="payEmp"></select>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="btn sub" id="payLoadBtn">この月を開く</button>
+          </div>
+        </div>
+        <div class="muted" id="payPeriodLabel" style="margin-top:10px"></div>
+      </div>
+
+      <div id="payArea" style="display:none">
+        <div class="card no-print">
+          <h2>⏰ 勤怠を入れる</h2>
+          <div class="grid4">
+            <div class="field"><label>出勤日数（日）</label><input type="number" id="atWorkDays" step="0.5" min="0"></div>
+            <div class="field"><label>労働時間（時間）</label><input type="number" id="atWorkHours" step="0.25" min="0"></div>
+            <div class="field"><label>残業時間（時間）</label><input type="number" id="atOtHours" step="0.25" min="0"></div>
+            <div class="field"><label>深夜時間（時間）</label><input type="number" id="atNightHours" step="0.25" min="0"></div>
+            <div class="field"><label>休日労働（時間）</label><input type="number" id="atHolHours" step="0.25" min="0"></div>
+            <div class="field"><label>欠勤日数（日）</label><input type="number" id="atAbsentDays" step="0.5" min="0"></div>
+            <div class="field"><label>有給日数（日）</label><input type="number" id="atPaidDays" step="0.5" min="0"></div>
+            <div class="field"><label>遅刻早退（時間）</label><input type="number" id="atLateHours" step="0.25" min="0"></div>
+          </div>
+          <div class="hint" style="margin-top:14px">
+            月給の方は「出勤日数」と「残業時間」だけ入れれば計算できます。時給・日給の方は「労働時間」または「出勤日数」を必ず入れてください。
+          </div>
+        </div>
+
+        <div class="card no-print">
+          <h2>💰 支給と控除</h2>
+          <div class="grid2">
+            <div>
+              <h3>支給</h3>
+              <div id="earnRows"></div>
+              <div class="calcrow total"><span>支給合計</span><span class="vl" id="sumEarn">0</span></div>
+            </div>
+            <div>
+              <h3>控除</h3>
+              <div id="dedRows"></div>
+              <div class="calcrow total"><span>控除合計</span><span class="vl" id="sumDed">0</span></div>
+            </div>
+          </div>
+
+          <h3 style="margin-top:20px">その他の支給・控除（自由入力）</h3>
+          <div class="grid2">
+            <div class="field"><label>その他支給の名前</label><input type="text" id="otherEarnName" placeholder="例）皆勤手当"></div>
+            <div class="field"><label>その他支給の金額</label><input type="number" id="otherEarn" step="1"></div>
+            <div class="field"><label>その他控除の名前</label><input type="text" id="otherDedName" placeholder="例）立替金"></div>
+            <div class="field"><label>その他控除の金額</label><input type="number" id="otherDed" step="1"></div>
+          </div>
+
+          <div class="sumgrid" style="margin-top:20px">
+            <div class="sumbox"><div class="lb">支給合計</div><div class="vl" id="boxEarn">0</div></div>
+            <div class="sumbox"><div class="lb">控除合計</div><div class="vl" id="boxDed">0</div></div>
+            <div class="sumbox net"><div class="lb">差引支給額</div><div class="vl" id="boxNet">0</div></div>
+          </div>
+
+          <div class="row" style="margin-top:18px">
+            <button class="btn" id="payCalcBtn">計算しなおす</button>
+            <button class="btn sub" id="paySaveBtn">この月を保存する</button>
+            <button class="btn gray" id="payPrintBtn">明細を印刷</button>
+          </div>
+          <div class="hint" style="margin-top:14px">
+            <b>所得税について。</b>ここに出るのは設定した計算方法による<b>参考の金額</b>です。
+            提出前にかならず国税庁の「源泉徴収税額表」でお確かめのうえ、必要なら金額欄を直接なおしてください。
+          </div>
+        </div>
+
+        <div class="card" id="payslipCard">
+          <h2 class="no-print">🧾 給与明細</h2>
+          <div class="payslip-wrap">
+            <div class="payslip-sheet" id="payslipSheet"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 従業員 ========== -->
+    <section class="page" id="page-emp">
+      <div class="card">
+        <h2>👥 従業員一覧</h2>
+        <div class="table-wrap">
+          <table class="list" id="empTable">
+            <thead><tr>
+              <th>番号</th><th>氏名</th><th>形態</th><th class="num">基本給</th>
+              <th>社保</th><th>雇保</th><th>税区分</th><th></th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="empNewBtn">＋ 従業員を追加</button>
+        </div>
+      </div>
+
+      <div class="card" id="empFormCard" style="display:none">
+        <h2>✏️ <span id="empFormTitle">従業員の登録</span></h2>
+        <input type="hidden" id="empId">
+        <h3>基本の情報</h3>
+        <div class="grid3">
+          <div class="field"><label>従業員番号</label><input type="text" id="empNo"></div>
+          <div class="field"><label>氏名</label><input type="text" id="empName"></div>
+          <div class="field"><label>フリガナ</label><input type="text" id="empKana"></div>
+          <div class="field"><label>生年月日</label><input type="date" id="empBirth"></div>
+          <div class="field"><label>入社日</label><input type="date" id="empJoin"></div>
+          <div class="field"><label>所属</label><input type="text" id="empDept" placeholder="例）本社"></div>
+        </div>
+
+        <h3>給与</h3>
+        <div class="grid3">
+          <div class="field">
+            <label>給与形態</label>
+            <select id="empType">
+              <option value="month">月給</option>
+              <option value="day">日給</option>
+              <option value="hour">時給</option>
+            </select>
+          </div>
+          <div class="field"><label>基本給（月額／日額／時間額）</label><input type="number" id="empBase" step="1"></div>
+          <div class="field"><label>役職手当（月額）</label><input type="number" id="empPost" step="1"></div>
+          <div class="field"><label>資格手当（月額）</label><input type="number" id="empQual" step="1"></div>
+          <div class="field"><label>その他固定手当（月額）</label><input type="number" id="empOtherAllow" step="1"></div>
+          <div class="field"><label>通勤手当（月額）</label><input type="number" id="empCommute" step="1"></div>
+        </div>
+        <label class="chk"><input type="checkbox" id="empCommuteTaxfree" checked>通勤手当を非課税としてあつかう</label>
+
+        <h3>保険・税</h3>
+        <div class="grid3">
+          <div class="field">
+            <label>社会保険</label>
+            <select id="empShaho"><option value="0">加入しない</option><option value="1">加入する</option></select>
+          </div>
+          <div class="field"><label>標準報酬月額（健保）</label><input type="number" id="empStdHealth" step="1000"></div>
+          <div class="field"><label>標準報酬月額（厚年）</label><input type="number" id="empStdPension" step="1000"></div>
+          <div class="field">
+            <label>介護保険（40〜64歳）</label>
+            <select id="empKaigo"><option value="0">対象外</option><option value="1">対象</option></select>
+          </div>
+          <div class="field">
+            <label>雇用保険</label>
+            <select id="empKoyo"><option value="0">加入しない</option><option value="1">加入する</option></select>
+          </div>
+          <div class="field">
+            <label>所得税の区分</label>
+            <select id="empTaxKb"><option value="kou">甲欄</option><option value="otsu">乙欄</option></select>
+          </div>
+          <div class="field"><label>扶養親族等の数（人）</label><input type="number" id="empDependents" step="1" min="0"></div>
+          <div class="field"><label>住民税（月額）</label><input type="number" id="empResidentTax" step="100"></div>
+          <div class="field"><label>月の所定労働日数（日）</label><input type="number" id="empMonthDays" step="0.5" placeholder="21"></div>
+          <div class="field"><label>月の所定労働時間（時間）</label><input type="number" id="empMonthHours" step="0.5" placeholder="168"></div>
+        </div>
+
+        <div class="row" style="margin-top:18px">
+          <button class="btn" id="empSaveBtn">保存する</button>
+          <button class="btn gray" id="empCancelBtn">やめる</button>
+          <div class="spacer" style="flex:1"></div>
+          <button class="btn danger" id="empDeleteBtn">この従業員を消す</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 賃金台帳 ========== -->
+    <section class="page" id="page-ledger">
+      <div class="card no-print">
+        <h2>📚 賃金台帳</h2>
+        <div class="grid3">
+          <div class="field"><label>年</label><input type="number" id="ledgerYear" step="1"></div>
+          <div class="field"><label>従業員</label><select id="ledgerEmp"></select></div>
+          <div class="field"><label>&nbsp;</label><button class="btn sub" id="ledgerShowBtn">表示する</button></div>
+        </div>
+      </div>
+      <div class="card" id="ledgerCard" style="display:none">
+        <h2 class="no-print">📄 年間の一覧</h2>
+        <div id="ledgerHead" style="font-size:13px;margin-bottom:12px"></div>
+        <div class="table-wrap">
+          <table class="list" id="ledgerTable">
+            <thead><tr>
+              <th>月</th><th class="num">出勤</th><th class="num">基本給等</th><th class="num">残業等</th>
+              <th class="num">通勤</th><th class="num">支給計</th><th class="num">社会保険</th>
+              <th class="num">雇用保険</th><th class="num">所得税</th><th class="num">住民税</th>
+              <th class="num">控除計</th><th class="num">差引支給</th>
+            </tr></thead>
+            <tbody></tbody>
+            <tfoot></tfoot>
+          </table>
+        </div>
+        <div class="row no-print" style="margin-top:14px">
+          <button class="btn gray" id="ledgerPrintBtn">この台帳を印刷</button>
+          <button class="btn gray" id="ledgerCsvBtn">CSVで書き出す</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 設定 ========== -->
+    <section class="page" id="page-setting">
+      <div class="card">
+        <h2>🏢 会社の情報</h2>
+        <div class="grid2">
+          <div class="field"><label>会社名</label><input type="text" id="cfgCompany"></div>
+          <div class="field"><label>住所</label><input type="text" id="cfgAddress"></div>
+          <div class="field"><label>締日</label>
+            <select id="cfgClosing">
+              <option value="end">末日</option><option value="15">15日</option>
+              <option value="20">20日</option><option value="25">25日</option>
+            </select>
+          </div>
+          <div class="field"><label>支払日</label><input type="text" id="cfgPayday" placeholder="例）翌月10日"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📊 保険の料率</h2>
+        <div class="hint" style="margin-bottom:14px">
+          料率は毎年かわります。<b>協会けんぽ（大阪支部）</b>と厚生労働省の最新の率を見て、ここを直してください。
+          ここに入れるのは<b>全体の率</b>です。健康保険・介護保険・厚生年金は、計算のときに自動で半分（労使折半）にします。
+        </div>
+        <div class="grid3">
+          <div class="field"><label>健康保険（％・全体）</label><input type="number" id="cfgRateHealth" step="0.001"></div>
+          <div class="field"><label>介護保険（％・全体）</label><input type="number" id="cfgRateKaigo" step="0.001"></div>
+          <div class="field"><label>厚生年金（％・全体）</label><input type="number" id="cfgRatePension" step="0.001"></div>
+          <div class="field"><label>雇用保険・本人負担（％）</label><input type="number" id="cfgRateKoyo" step="0.001"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>⏱️ 割増の率</h2>
+        <div class="grid3">
+          <div class="field"><label>残業（例：1.25）</label><input type="number" id="cfgOtRate" step="0.01"></div>
+          <div class="field"><label>深夜（例：0.25）</label><input type="number" id="cfgNightRate" step="0.01"></div>
+          <div class="field"><label>休日（例：1.35）</label><input type="number" id="cfgHolRate" step="0.01"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🧮 所得税の計算</h2>
+        <div class="hint" style="margin-bottom:14px">
+          源泉所得税は「月額表」を見て決めるのが正しいやり方です。ここでは<b>参考の金額</b>を出すだけなので、
+          明細の金額欄はいつでも手で直せます。<b>提出前に必ず税額表で確認してください。</b>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>参考計算のしかた</label>
+            <select id="cfgTaxMode">
+              <option value="manual">計算しない（毎回手で入れる）</option>
+              <option value="approx">かんたん計算（設定した率で出す）</option>
+            </select>
+          </div>
+          <div class="field"><label>扶養1人あたりの控除額（月・円）</label><input type="number" id="cfgDepDeduction" step="100"></div>
+          <div class="field"><label>基礎的な控除額（月・円）</label><input type="number" id="cfgBasicDeduction" step="100"></div>
+          <div class="field"><label>甲欄のおおよその税率（％）</label><input type="number" id="cfgTaxRateKou" step="0.1"></div>
+          <div class="field"><label>乙欄のおおよその税率（％）</label><input type="number" id="cfgTaxRateOtsu" step="0.1"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>💾 データ</h2>
+        <div class="row">
+          <button class="btn sub" id="cfgSaveBtn">設定を保存する</button>
+          <button class="btn gray" id="cfgBackupBtn">バックアップを書き出す</button>
+          <button class="btn gray" id="cfgRestoreBtn">バックアップから戻す</button>
+          <input type="file" id="cfgRestoreFile" accept="application/json" style="display:none">
+        </div>
+        <div class="muted" style="margin-top:12px" id="cfgStatus"></div>
+        <div class="row" style="margin-top:16px">
+          <button class="btn danger sm" id="cfgResetBtn">この端末の設定をやりなおす</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+(function () {
+  'use strict';
+
+  /* ===================== 基本の道具 ===================== */
+  var LS_DATA = 'kyuyoAssist.data.v1';
+  var LS_CONF = 'kyuyoAssist.fbconf.v1';
+
+  function $(id) { return document.getElementById(id); }
+  function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+  function yen(v) { return Math.round(num(v)).toLocaleString('ja-JP'); }
+  function jpRound(v) { /* 社会保険料の端数：50銭以下切捨て、超えは切上げ */
+    var f = Math.floor(v);
+    return (v - f) <= 0.5 ? f : f + 1;
+  }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function uid() { return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
+  function wareki(y, m) {
+    // 令和は 2019年5月1日から。2019年=令和元年
+    if (y >= 2019) { var r = y - 2018; return '令和' + (r === 1 ? '元' : r) + '年' + m + '月'; }
+    return y + '年' + m + '月';
+  }
+
+  /* ===================== 初期データ ===================== */
+  var DEFAULT_SETTINGS = {
+    company: '合同会社アシスト建物管理',
+    address: '',
+    closing: 'end',
+    payday: '翌月10日',
+    rateHealth: 10.34,   // ％（全体）目安。必ず最新に直すこと
+    rateKaigo: 1.60,     // ％（全体）目安
+    ratePension: 18.30,  // ％（全体）目安
+    rateKoyo: 0.60,      // ％（本人負担）目安
+    otRate: 1.25,
+    nightRate: 0.25,
+    holRate: 1.35,
+    taxMode: 'approx',
+    basicDeduction: 88000,
+    depDeduction: 31667,
+    taxRateKou: 4.2,
+    taxRateOtsu: 10.0
+  };
+
+  var DB = { employees: [], payrolls: {}, settings: {} };
+  var FB = null;              // { config, email, path, dbUrl }
+  var fbDb = null;            // Firebase Database インスタンス
+  var localOnly = false;
+  var currentEmpId = null;
+  var currentMonth = null;
+  var lastCalc = null;
+
+  function settings() {
+    var s = {};
+    for (var k in DEFAULT_SETTINGS) s[k] = DEFAULT_SETTINGS[k];
+    for (var k2 in (DB.settings || {})) s[k2] = DB.settings[k2];
+    return s;
+  }
+
+  /* ===================== 保存（ローカル） ===================== */
+  function saveLocal() {
+    try { localStorage.setItem(LS_DATA, JSON.stringify(DB)); } catch (e) { console.warn(e); }
+  }
+  function loadLocal() {
+    try {
+      var raw = localStorage.getItem(LS_DATA);
+      if (raw) {
+        var d = JSON.parse(raw);
+        DB.employees = d.employees || [];
+        DB.payrolls = d.payrolls || {};
+        DB.settings = d.settings || {};
+      }
+    } catch (e) { console.warn(e); }
+  }
+
+  /* ===================== 保存（Firebase） ===================== */
+  function setSync(state, text) {
+    var el = $('syncDot');
+    el.className = 'sync-dot' + (state ? ' ' + state : '');
+    el.querySelector('span').textContent = text;
+  }
+
+  function connectDb() {
+    if (!FB || !window.kaikeiAuth || !window.kaikeiAuth.auth) return Promise.resolve(null);
+    if (fbDb) return Promise.resolve(fbDb);
+    return import('https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js')
+      .then(function (mod) {
+        var app = window.kaikeiAuth.auth.app;
+        fbDb = FB.dbUrl ? mod.getDatabase(app, FB.dbUrl) : mod.getDatabase(app);
+        fbDb.__mod = mod;
+        return fbDb;
+      });
+  }
+
+  function cloudLoad() {
+    if (localOnly || !FB) return Promise.resolve(false);
+    setSync('', '読込中…');
+    return connectDb().then(function (db) {
+      if (!db) return false;
+      var m = db.__mod;
+      return m.get(m.ref(db, FB.path)).then(function (snap) {
+        if (snap.exists()) {
+          var d = snap.val() || {};
+          DB.employees = d.employees || [];
+          DB.payrolls = d.payrolls || {};
+          DB.settings = d.settings || {};
+          saveLocal();
+        }
+        setSync('ok', '同期OK');
+        return true;
+      });
+    }).catch(function (e) {
+      console.warn('[kyuyo] load failed:', e);
+      setSync('ng', 'この端末のみ');
+      return false;
+    });
+  }
+
+  function cloudSave(silent) {
+    saveLocal();
+    if (localOnly || !FB) { if (!silent) toast('この端末に保存しました'); return Promise.resolve(false); }
+    setSync('', '保存中…');
+    return connectDb().then(function (db) {
+      if (!db) throw new Error('no db');
+      var m = db.__mod;
+      return m.set(m.ref(db, FB.path), {
+        employees: DB.employees, payrolls: DB.payrolls, settings: DB.settings,
+        updatedAt: new Date().toISOString()
+      });
+    }).then(function () {
+      setSync('ok', '同期OK');
+      if (!silent) toast('保存しました');
+      return true;
+    }).catch(function (e) {
+      console.warn('[kyuyo] save failed:', e);
+      setSync('ng', '保存できません');
+      if (!silent) toast('クラウドに保存できませんでした（この端末には保存済みです）');
+      return false;
+    });
+  }
+
+  /* ===================== 設定画面 ===================== */
+  function fillSettingsForm() {
+    var s = settings();
+    $('cfgCompany').value = s.company;
+    $('cfgAddress').value = s.address;
+    $('cfgClosing').value = s.closing;
+    $('cfgPayday').value = s.payday;
+    $('cfgRateHealth').value = s.rateHealth;
+    $('cfgRateKaigo').value = s.rateKaigo;
+    $('cfgRatePension').value = s.ratePension;
+    $('cfgRateKoyo').value = s.rateKoyo;
+    $('cfgOtRate').value = s.otRate;
+    $('cfgNightRate').value = s.nightRate;
+    $('cfgHolRate').value = s.holRate;
+    $('cfgTaxMode').value = s.taxMode;
+    $('cfgBasicDeduction').value = s.basicDeduction;
+    $('cfgDepDeduction').value = s.depDeduction;
+    $('cfgTaxRateKou').value = s.taxRateKou;
+    $('cfgTaxRateOtsu').value = s.taxRateOtsu;
+    $('companyLabel').textContent = s.company;
+  }
+  function readSettingsForm() {
+    DB.settings = {
+      company: $('cfgCompany').value.trim() || DEFAULT_SETTINGS.company,
+      address: $('cfgAddress').value.trim(),
+      closing: $('cfgClosing').value,
+      payday: $('cfgPayday').value.trim(),
+      rateHealth: num($('cfgRateHealth').value),
+      rateKaigo: num($('cfgRateKaigo').value),
+      ratePension: num($('cfgRatePension').value),
+      rateKoyo: num($('cfgRateKoyo').value),
+      otRate: num($('cfgOtRate').value),
+      nightRate: num($('cfgNightRate').value),
+      holRate: num($('cfgHolRate').value),
+      taxMode: $('cfgTaxMode').value,
+      basicDeduction: num($('cfgBasicDeduction').value),
+      depDeduction: num($('cfgDepDeduction').value),
+      taxRateKou: num($('cfgTaxRateKou').value),
+      taxRateOtsu: num($('cfgTaxRateOtsu').value)
+    };
+    $('companyLabel').textContent = DB.settings.company;
+  }
+
+  /* ===================== 従業員 ===================== */
+  var TYPE_LABEL = { month: '月給', day: '日給', hour: '時給' };
+
+  function renderEmpTable() {
+    var tb = $('empTable').querySelector('tbody');
+    tb.innerHTML = '';
+    if (!DB.employees.length) {
+      tb.innerHTML = '<tr><td colspan="8"><div class="empty">まだ従業員が登録されていません。<br>下の「＋ 従業員を追加」から登録してください。</div></td></tr>';
+      return;
+    }
+    DB.employees.forEach(function (e) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + esc(e.no || '') + '</td>' +
+        '<td><b>' + esc(e.name || '') + '</b><br><span class="muted">' + esc(e.kana || '') + '</span></td>' +
+        '<td>' + (TYPE_LABEL[e.type] || '') + '</td>' +
+        '<td class="num">' + yen(e.base) + '</td>' +
+        '<td>' + (num(e.shaho) ? '<span class="pill on">加入</span>' : '<span class="pill off">なし</span>') + '</td>' +
+        '<td>' + (num(e.koyo) ? '<span class="pill on">加入</span>' : '<span class="pill off">なし</span>') + '</td>' +
+        '<td>' + (e.taxKb === 'otsu' ? '乙欄' : '甲欄') + '</td>' +
+        '<td><button class="btn gray sm" data-edit="' + esc(e.id) + '">なおす</button></td>';
+      tb.appendChild(tr);
+    });
+    Array.prototype.forEach.call(tb.querySelectorAll('[data-edit]'), function (b) {
+      b.addEventListener('click', function () { openEmpForm(b.getAttribute('data-edit')); });
+    });
+  }
+
+  function blankEmp() {
+    return {
+      id: '', no: '', name: '', kana: '', birth: '', join: '', dept: '',
+      type: 'month', base: 0, post: 0, qual: 0, otherAllow: 0,
+      commute: 0, commuteTaxfree: true,
+      shaho: 0, stdHealth: 0, stdPension: 0, kaigo: 0, koyo: 1,
+      taxKb: 'kou', dependents: 0, residentTax: 0,
+      monthDays: 21, monthHours: 168
+    };
+  }
+
+  function openEmpForm(id) {
+    var e = id ? findEmp(id) : blankEmp();
+    if (!e) return;
+    $('empFormTitle').textContent = id ? '従業員をなおす' : '従業員の登録';
+    $('empId').value = e.id || '';
+    $('empNo').value = e.no || '';
+    $('empName').value = e.name || '';
+    $('empKana').value = e.kana || '';
+    $('empBirth').value = e.birth || '';
+    $('empJoin').value = e.join || '';
+    $('empDept').value = e.dept || '';
+    $('empType').value = e.type || 'month';
+    $('empBase').value = e.base || 0;
+    $('empPost').value = e.post || 0;
+    $('empQual').value = e.qual || 0;
+    $('empOtherAllow').value = e.otherAllow || 0;
+    $('empCommute').value = e.commute || 0;
+    $('empCommuteTaxfree').checked = e.commuteTaxfree !== false;
+    $('empShaho').value = String(num(e.shaho));
+    $('empStdHealth').value = e.stdHealth || 0;
+    $('empStdPension').value = e.stdPension || 0;
+    $('empKaigo').value = String(num(e.kaigo));
+    $('empKoyo').value = String(num(e.koyo));
+    $('empTaxKb').value = e.taxKb || 'kou';
+    $('empDependents').value = e.dependents || 0;
+    $('empResidentTax').value = e.residentTax || 0;
+    $('empMonthDays').value = e.monthDays || 21;
+    $('empMonthHours').value = e.monthHours || 168;
+    $('empDeleteBtn').style.display = id ? '' : 'none';
+    $('empFormCard').style.display = '';
+    $('empFormCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function findEmp(id) {
+    for (var i = 0; i < DB.employees.length; i++) if (DB.employees[i].id === id) return DB.employees[i];
+    return null;
+  }
+
+  function saveEmpForm() {
+    var name = $('empName').value.trim();
+    if (!name) { toast('氏名を入れてください'); return; }
+    var id = $('empId').value;
+    var e = id ? findEmp(id) : blankEmp();
+    if (!id) { e.id = uid(); DB.employees.push(e); }
+    e.no = $('empNo').value.trim();
+    e.name = name;
+    e.kana = $('empKana').value.trim();
+    e.birth = $('empBirth').value;
+    e.join = $('empJoin').value;
+    e.dept = $('empDept').value.trim();
+    e.type = $('empType').value;
+    e.base = num($('empBase').value);
+    e.post = num($('empPost').value);
+    e.qual = num($('empQual').value);
+    e.otherAllow = num($('empOtherAllow').value);
+    e.commute = num($('empCommute').value);
+    e.commuteTaxfree = $('empCommuteTaxfree').checked;
+    e.shaho = num($('empShaho').value);
+    e.stdHealth = num($('empStdHealth').value);
+    e.stdPension = num($('empStdPension').value);
+    e.kaigo = num($('empKaigo').value);
+    e.koyo = num($('empKoyo').value);
+    e.taxKb = $('empTaxKb').value;
+    e.dependents = num($('empDependents').value);
+    e.residentTax = num($('empResidentTax').value);
+    e.monthDays = num($('empMonthDays').value) || 21;
+    e.monthHours = num($('empMonthHours').value) || 168;
+    $('empFormCard').style.display = 'none';
+    renderEmpTable(); fillEmpSelects();
+    cloudSave();
+  }
+
+  function deleteEmp() {
+    var id = $('empId').value;
+    if (!id) return;
+    var e = findEmp(id);
+    if (!e) return;
+    if (!confirm(e.name + ' さんを消します。よろしいですか？\n（この方の給与データも消えます）')) return;
+    DB.employees = DB.employees.filter(function (x) { return x.id !== id; });
+    Object.keys(DB.payrolls).forEach(function (k) { if (k.indexOf(id + '|') === 0) delete DB.payrolls[k]; });
+    $('empFormCard').style.display = 'none';
+    renderEmpTable(); fillEmpSelects();
+    cloudSave();
+  }
+
+  function fillEmpSelects() {
+    ['payEmp', 'ledgerEmp'].forEach(function (sid) {
+      var sel = $(sid); if (!sel) return;
+      var keep = sel.value;
+      sel.innerHTML = '';
+      if (!DB.employees.length) {
+        sel.innerHTML = '<option value="">（従業員が未登録です）</option>';
+        return;
+      }
+      DB.employees.forEach(function (e) {
+        var o = document.createElement('option');
+        o.value = e.id; o.textContent = (e.no ? e.no + '　' : '') + e.name;
+        sel.appendChild(o);
+      });
+      if (keep) sel.value = keep;
+    });
+  }
+
+  window.__kyuyo = {
+    $: $, num: num, yen: yen, jpRound: jpRound, esc: esc, toast: toast, wareki: wareki,
+    getDB: function () { return DB; },
+    setDB: function (d) { DB = d; },
+    settings: settings,
+    saveLocal: saveLocal, loadLocal: loadLocal,
+    cloudSave: cloudSave, cloudLoad: cloudLoad,
+    setSync: setSync,
+    fillSettingsForm: fillSettingsForm, readSettingsForm: readSettingsForm,
+    renderEmpTable: renderEmpTable, openEmpForm: openEmpForm, saveEmpForm: saveEmpForm,
+    deleteEmp: deleteEmp, fillEmpSelects: fillEmpSelects, findEmp: findEmp,
+    TYPE_LABEL: TYPE_LABEL,
+    LS_DATA: LS_DATA, LS_CONF: LS_CONF,
+    getFB: function () { return FB; },
+    setFB: function (v) { FB = v; },
+    getLocalOnly: function () { return localOnly; },
+    setLocalOnly: function (v) { localOnly = v; },
+    state: {
+      get currentEmpId() { return currentEmpId; }, set currentEmpId(v) { currentEmpId = v; },
+      get currentMonth() { return currentMonth; }, set currentMonth(v) { currentMonth = v; },
+      get lastCalc() { return lastCalc; }, set lastCalc(v) { lastCalc = v; }
+    }
+  };
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+  var K = window.__kyuyo;
+  var $ = K.$, num = K.num, yen = K.yen, esc = K.esc, toast = K.toast, jpRound = K.jpRound;
+
+  var EARN_ROWS = [
+    { k: 'base', l: '基本給' },
+    { k: 'post', l: '役職手当' },
+    { k: 'qual', l: '資格手当' },
+    { k: 'otherAllow', l: 'その他手当' },
+    { k: 'ot', l: '残業手当' },
+    { k: 'night', l: '深夜手当' },
+    { k: 'hol', l: '休日手当' },
+    { k: 'absent', l: '欠勤控除' },
+    { k: 'late', l: '遅刻早退控除' },
+    { k: 'commute', l: '通勤手当' },
+    { k: 'other', l: 'その他支給' }
+  ];
+  var DED_ROWS = [
+    { k: 'health', l: '健康保険' },
+    { k: 'kaigo', l: '介護保険' },
+    { k: 'pension', l: '厚生年金' },
+    { k: 'koyo', l: '雇用保険' },
+    { k: 'incomeTax', l: '所得税（参考）' },
+    { k: 'residentTax', l: '住民税' },
+    { k: 'otherDed', l: 'その他控除' }
+  ];
+
+  var ATT_FIELDS = {
+    workDays: 'atWorkDays', workHours: 'atWorkHours', otHours: 'atOtHours',
+    nightHours: 'atNightHours', holHours: 'atHolHours', absentDays: 'atAbsentDays',
+    paidDays: 'atPaidDays', lateHours: 'atLateHours'
+  };
+
+  function readAtt() {
+    var a = {};
+    for (var k in ATT_FIELDS) a[k] = num($(ATT_FIELDS[k]).value);
+    return a;
+  }
+  function writeAtt(a) {
+    a = a || {};
+    for (var k in ATT_FIELDS) $(ATT_FIELDS[k]).value = (a[k] != null && a[k] !== 0) ? a[k] : '';
+  }
+
+  function hourlyBase(e, s) {
+    var md = num(e.monthDays) || 21, mh = num(e.monthHours) || 168;
+    if (e.type === 'hour') return num(e.base);
+    if (e.type === 'day') { var hpd = mh / (md || 21); return num(e.base) / (hpd || 8); }
+    return (num(e.base) + num(e.post) + num(e.qual) + num(e.otherAllow)) / (mh || 168);
+  }
+
+  /* ---------- 計算 ---------- */
+  function calculate(e, att, s, extra) {
+    extra = extra || {};
+    var md = num(e.monthDays) || 21;
+    var hourly = hourlyBase(e, s);
+
+    var earn = {};
+    if (e.type === 'month') earn.base = Math.round(num(e.base));
+    else if (e.type === 'day') earn.base = Math.round(num(e.base) * num(att.workDays));
+    else earn.base = Math.round(num(e.base) * num(att.workHours));
+
+    earn.post = Math.round(num(e.post));
+    earn.qual = Math.round(num(e.qual));
+    earn.otherAllow = Math.round(num(e.otherAllow));
+    earn.ot = Math.round(hourly * num(s.otRate) * num(att.otHours));
+    earn.night = Math.round(hourly * num(s.nightRate) * num(att.nightHours));
+    earn.hol = Math.round(hourly * num(s.holRate) * num(att.holHours));
+    earn.absent = (e.type === 'month' && num(att.absentDays) > 0)
+      ? -Math.round(num(e.base) / md * num(att.absentDays)) : 0;
+    earn.late = num(att.lateHours) > 0 ? -Math.round(hourly * num(att.lateHours)) : 0;
+    earn.commute = Math.round(num(e.commute));
+    earn.other = Math.round(num(extra.otherEarn));
+
+    var totalEarn = 0;
+    EARN_ROWS.forEach(function (r) { totalEarn += num(earn[r.k]); });
+
+    var taxFreeCommute = (e.commuteTaxfree !== false) ? num(earn.commute) : 0;
+    var taxableGross = totalEarn - taxFreeCommute;
+
+    var ded = {};
+    if (num(e.shaho)) {
+      ded.health = jpRound(num(e.stdHealth) * num(s.rateHealth) / 100 / 2);
+      ded.kaigo = num(e.kaigo) ? jpRound(num(e.stdHealth) * num(s.rateKaigo) / 100 / 2) : 0;
+      ded.pension = jpRound(num(e.stdPension) * num(s.ratePension) / 100 / 2);
+    } else { ded.health = 0; ded.kaigo = 0; ded.pension = 0; }
+    ded.koyo = num(e.koyo) ? jpRound(totalEarn * num(s.rateKoyo) / 100) : 0;
+
+    var shakaiKei = ded.health + ded.kaigo + ded.pension + ded.koyo;
+    var taxBase = Math.max(0, taxableGross - shakaiKei);
+
+    if (s.taxMode === 'approx') {
+      if (e.taxKb === 'otsu') {
+        ded.incomeTax = Math.floor(taxBase * num(s.taxRateOtsu) / 100);
+      } else {
+        var afterDed = taxBase - num(s.basicDeduction) - num(s.depDeduction) * num(e.dependents);
+        ded.incomeTax = afterDed > 0 ? Math.floor(afterDed * num(s.taxRateKou) / 100) : 0;
+      }
+    } else {
+      ded.incomeTax = 0;
+    }
+    ded.residentTax = Math.round(num(e.residentTax));
+    ded.otherDed = Math.round(num(extra.otherDed));
+
+    var totalDed = 0;
+    DED_ROWS.forEach(function (r) { totalDed += num(ded[r.k]); });
+
+    return {
+      earn: earn, ded: ded,
+      hourly: Math.round(hourly * 10) / 10,
+      totalEarn: totalEarn, totalDed: totalDed,
+      shakaiKei: shakaiKei, taxableGross: taxableGross, taxBase: taxBase,
+      net: totalEarn - totalDed,
+      att: att,
+      otherEarnName: extra.otherEarnName || '',
+      otherDedName: extra.otherDedName || ''
+    };
+  }
+
+  /* ---------- 支給・控除の行 ---------- */
+  function renderRows(c) {
+    function build(rows, obj, holder) {
+      var h = '';
+      rows.forEach(function (r) {
+        h += '<div class="calcrow"><span class="lb">' + r.l + '</span>' +
+             '<input type="number" step="1" data-fld="' + holder + '" data-k="' + r.k + '" value="' +
+             Math.round(num(obj[r.k])) + '"></div>';
+      });
+      return h;
+    }
+    $('earnRows').innerHTML = build(EARN_ROWS, c.earn, 'earn');
+    $('dedRows').innerHTML = build(DED_ROWS, c.ded, 'ded');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-fld]'), function (inp) {
+      inp.addEventListener('input', recalcTotals);
+    });
+    recalcTotals();
+  }
+
+  function recalcTotals() {
+    var c = K.state.lastCalc;
+    if (!c) return;
+    Array.prototype.forEach.call(document.querySelectorAll('[data-fld]'), function (inp) {
+      var f = inp.getAttribute('data-fld'), k = inp.getAttribute('data-k');
+      c[f][k] = num(inp.value);
+    });
+    var te = 0, td = 0;
+    EARN_ROWS.forEach(function (r) { te += num(c.earn[r.k]); });
+    DED_ROWS.forEach(function (r) { td += num(c.ded[r.k]); });
+    c.totalEarn = te; c.totalDed = td; c.net = te - td;
+    c.shakaiKei = num(c.ded.health) + num(c.ded.kaigo) + num(c.ded.pension) + num(c.ded.koyo);
+    c.otherEarnName = $('otherEarnName').value.trim();
+    c.otherDedName = $('otherDedName').value.trim();
+    $('sumEarn').textContent = yen(te);
+    $('sumDed').textContent = yen(td);
+    $('boxEarn').textContent = '¥' + yen(te);
+    $('boxDed').textContent = '¥' + yen(td);
+    $('boxNet').textContent = '¥' + yen(c.net);
+    renderPayslip();
+  }
+
+  /* ---------- 給与明細 ---------- */
+  function renderPayslip() {
+    var c = K.state.lastCalc;
+    var e = K.findEmp(K.state.currentEmpId);
+    if (!c || !e) { $('payslipSheet').innerHTML = ''; return; }
+    var s = K.settings();
+    var ym = (K.state.currentMonth || '').split('-');
+    var y = num(ym[0]), m = num(ym[1]);
+
+    function att(l, v, u) {
+      return '<div class="ps-attend-item"><div class="lb">' + l + '</div><div class="vl">' +
+             (num(v) ? (Math.round(num(v) * 100) / 100) + (u || '') : '—') + '</div></div>';
+    }
+    function row(l, v, cls) {
+      if (!num(v) && !cls) return '<div class="ps-item-row ps-empty"><span class="lb">' + l + '</span><span class="vl">—</span></div>';
+      return '<div class="ps-item-row' + (cls ? ' ' + cls : '') + '"><span class="lb">' + l +
+             '</span><span class="vl">' + yen(v) + '</span></div>';
+    }
+
+    var a = c.att || {};
+    var earnHtml = '';
+    EARN_ROWS.forEach(function (r) {
+      var label = (r.k === 'other' && c.otherEarnName) ? c.otherEarnName : r.l;
+      earnHtml += row(label, c.earn[r.k]);
+    });
+    var dedHtml = '';
+    DED_ROWS.forEach(function (r) {
+      var label = (r.k === 'otherDed' && c.otherDedName) ? c.otherDedName :
+                  (r.k === 'incomeTax' ? '所得税' : r.l);
+      dedHtml += row(label, c.ded[r.k]);
+    });
+    dedHtml += row('社会保険料計', c.shakaiKei, 'ps-sum');
+    dedHtml += row('課税対象額', c.taxBase, 'ps-sum');
+
+    $('payslipSheet').innerHTML =
+      '<div class="ps-head">' +
+        '<div class="ps-code">従業員番号<b>' + esc(e.no || '—') + '</b></div>' +
+        '<div class="ps-name">' + esc(e.name) + ' 様' +
+          (e.dept ? '<span class="ps-branch">' + esc(e.dept) + '</span>' : '') + '</div>' +
+        '<div class="ps-month">' + K.wareki(y, m) + '分 給与明細書' +
+          '<span>' + esc(s.company) + '　支払：' + esc(s.payday || '') + '</span></div>' +
+      '</div>' +
+      '<div class="ps-attend">' +
+        '<div class="ps-attend-label">勤怠</div>' +
+        '<div class="ps-attend-items">' +
+          att('出勤日数', a.workDays, '日') +
+          att('有給', a.paidDays, '日') +
+          att('欠勤', a.absentDays, '日') +
+          att('労働時間', a.workHours, 'h') +
+          att('残業時間', a.otHours, 'h') +
+          att('深夜時間', a.nightHours, 'h') +
+          att('休日労働', a.holHours, 'h') +
+          att('遅早時間', a.lateHours, 'h') +
+        '</div>' +
+      '</div>' +
+      '<div class="ps-body">' +
+        '<div class="ps-col"><div class="ps-col-label">支<br>給</div><div class="ps-col-items">' + earnHtml + '</div></div>' +
+        '<div class="ps-col"><div class="ps-col-label">控<br>除</div><div class="ps-col-items">' + dedHtml + '</div></div>' +
+      '</div>' +
+      '<div class="ps-totals">' +
+        '<div><div class="lb">支給合計</div><div class="vl">' + yen(c.totalEarn) + '</div></div>' +
+        '<div><div class="lb">控除合計</div><div class="vl">' + yen(c.totalDed) + '</div></div>' +
+        '<div><div class="lb">課税支給額</div><div class="vl">' + yen(c.taxableGross) + '</div></div>' +
+      '</div>' +
+      '<div class="ps-net"><div class="lb">差引支給額</div><div class="vl">¥' + yen(c.net) + '</div></div>' +
+      '<div class="ps-foot">' + esc(s.company) + (s.address ? '　' + esc(s.address) : '') +
+        '　／　この明細は給与アシストで作成しました。</div>';
+  }
+
+  /* ---------- 月の読み書き ---------- */
+  function payKey(empId, month) { return empId + '|' + month; }
+
+  function openMonth() {
+    var empId = $('payEmp').value;
+    var month = $('payMonth').value;
+    if (!empId) { toast('従業員を選んでください'); return; }
+    if (!month) { toast('対象年月を選んでください'); return; }
+    var e = K.findEmp(empId);
+    if (!e) { toast('従業員が見つかりません'); return; }
+    K.state.currentEmpId = empId;
+    K.state.currentMonth = month;
+
+    var rec = K.getDB().payrolls[payKey(empId, month)];
+    var s = K.settings();
+    if (rec) {
+      writeAtt(rec.att);
+      $('otherEarnName').value = rec.otherEarnName || '';
+      $('otherDedName').value = rec.otherDedName || '';
+      $('otherEarn').value = num(rec.earn && rec.earn.other) || '';
+      $('otherDed').value = num(rec.ded && rec.ded.otherDed) || '';
+      var c = calculate(e, rec.att || {}, s, {});
+      // 保存されている金額をそのまま復元する（手で直した金額を守るため）
+      EARN_ROWS.forEach(function (r) { if (rec.earn && rec.earn[r.k] != null) c.earn[r.k] = rec.earn[r.k]; });
+      DED_ROWS.forEach(function (r) { if (rec.ded && rec.ded[r.k] != null) c.ded[r.k] = rec.ded[r.k]; });
+      c.otherEarnName = rec.otherEarnName || '';
+      c.otherDedName = rec.otherDedName || '';
+      K.state.lastCalc = c;
+      renderRows(c);
+      toast('保存されている内容をひらきました');
+    } else {
+      writeAtt({});
+      $('otherEarnName').value = ''; $('otherDedName').value = '';
+      $('otherEarn').value = ''; $('otherDed').value = '';
+      doCalc();
+      toast('新しく作ります。勤怠を入れて「計算しなおす」を押してください');
+    }
+    var ym = month.split('-');
+    $('payPeriodLabel').textContent =
+      K.wareki(num(ym[0]), num(ym[1])) + '分　／　締日：' +
+      (s.closing === 'end' ? '末日' : s.closing + '日') + '　支払：' + (s.payday || '—');
+    $('payArea').style.display = '';
+  }
+
+  function doCalc() {
+    var e = K.findEmp(K.state.currentEmpId);
+    if (!e) { toast('従業員を選んでください'); return; }
+    var c = calculate(e, readAtt(), K.settings(), {
+      otherEarn: num($('otherEarn').value),
+      otherDed: num($('otherDed').value),
+      otherEarnName: $('otherEarnName').value.trim(),
+      otherDedName: $('otherDedName').value.trim()
+    });
+    K.state.lastCalc = c;
+    renderRows(c);
+  }
+
+  function saveMonth() {
+    var c = K.state.lastCalc;
+    if (!c || !K.state.currentEmpId || !K.state.currentMonth) { toast('先に月を開いてください'); return; }
+    recalcTotals();
+    var db = K.getDB();
+    db.payrolls[payKey(K.state.currentEmpId, K.state.currentMonth)] = {
+      att: readAtt(),
+      earn: c.earn, ded: c.ded,
+      otherEarnName: c.otherEarnName, otherDedName: c.otherDedName,
+      totalEarn: c.totalEarn, totalDed: c.totalDed, net: c.net,
+      shakaiKei: c.shakaiKei, taxableGross: c.taxableGross,
+      savedAt: new Date().toISOString()
+    };
+    K.cloudSave();
+  }
+
+  /* ---------- 賃金台帳 ---------- */
+  function showLedger() {
+    var empId = $('ledgerEmp').value;
+    var year = num($('ledgerYear').value);
+    if (!empId || !year) { toast('年と従業員を選んでください'); return; }
+    var e = K.findEmp(empId);
+    var db = K.getDB();
+    var tb = $('ledgerTable').querySelector('tbody');
+    var tf = $('ledgerTable').querySelector('tfoot');
+    tb.innerHTML = ''; tf.innerHTML = '';
+    var sum = { days: 0, base: 0, extra: 0, commute: 0, earn: 0, sh: 0, koyo: 0, tax: 0, res: 0, ded: 0, net: 0 };
+    var rows = [];
+    for (var m = 1; m <= 12; m++) {
+      var mm = year + '-' + (m < 10 ? '0' + m : m);
+      var r = db.payrolls[payKey(empId, mm)];
+      var o = { m: m };
+      if (r) {
+        var ea = r.earn || {}, de = r.ded || {}, at = r.att || {};
+        o.days = num(at.workDays);
+        o.base = num(ea.base) + num(ea.post) + num(ea.qual) + num(ea.otherAllow) + num(ea.absent);
+        o.extra = num(ea.ot) + num(ea.night) + num(ea.hol) + num(ea.late) + num(ea.other);
+        o.commute = num(ea.commute);
+        o.earn = num(r.totalEarn);
+        o.sh = num(de.health) + num(de.kaigo) + num(de.pension);
+        o.koyo = num(de.koyo);
+        o.tax = num(de.incomeTax);
+        o.res = num(de.residentTax);
+        o.ded = num(r.totalDed);
+        o.net = num(r.net);
+        for (var k in sum) if (o[k] != null) sum[k] += o[k];
+      }
+      rows.push(o);
+    }
+    rows.forEach(function (o) {
+      var tr = document.createElement('tr');
+      var has = o.earn != null;
+      tr.innerHTML = '<td>' + o.m + '月</td>' +
+        ['days', 'base', 'extra', 'commute', 'earn', 'sh', 'koyo', 'tax', 'res', 'ded', 'net']
+          .map(function (k) {
+            var v = o[k];
+            return '<td class="num">' + (v == null ? '<span class="muted">—</span>' : (k === 'days' ? (Math.round(v * 10) / 10) : yen(v))) + '</td>';
+          }).join('');
+      if (!has) tr.style.opacity = '.5';
+      tb.appendChild(tr);
+    });
+    tf.innerHTML = '<tr style="font-weight:700;background:#FBF6ED">' +
+      '<td>合計</td>' +
+      ['days', 'base', 'extra', 'commute', 'earn', 'sh', 'koyo', 'tax', 'res', 'ded', 'net']
+        .map(function (k) {
+          return '<td class="num">' + (k === 'days' ? (Math.round(sum[k] * 10) / 10) : yen(sum[k])) + '</td>';
+        }).join('') + '</tr>';
+    $('ledgerHead').innerHTML = '<b>' + esc(K.settings().company) + '</b>　賃金台帳　' +
+      year + '年（' + K.wareki(year, 1).replace(/1月$/, '') + '）　' +
+      esc(e ? ((e.no ? e.no + '　' : '') + e.name) : '');
+    $('ledgerCard').style.display = '';
+    K.state.ledgerRows = rows;
+    K.state.ledgerSum = sum;
+    K.state.ledgerEmp = e;
+    K.state.ledgerYear = year;
+  }
+
+  function ledgerCsv() {
+    var rows = K.state.ledgerRows;
+    if (!rows) { toast('先に表示してください'); return; }
+    var e = K.state.ledgerEmp, year = K.state.ledgerYear, sum = K.state.ledgerSum;
+    var head = ['月', '出勤日数', '基本給等', '残業等', '通勤手当', '支給合計', '社会保険', '雇用保険', '所得税', '住民税', '控除合計', '差引支給'];
+    var lines = [head.join(',')];
+    rows.forEach(function (o) {
+      lines.push([o.m + '月', o.days || 0, o.base || 0, o.extra || 0, o.commute || 0, o.earn || 0,
+        o.sh || 0, o.koyo || 0, o.tax || 0, o.res || 0, o.ded || 0, o.net || 0].join(','));
+    });
+    lines.push(['合計', sum.days, sum.base, sum.extra, sum.commute, sum.earn,
+      sum.sh, sum.koyo, sum.tax, sum.res, sum.ded, sum.net].join(','));
+    var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '賃金台帳_' + (e ? e.name : '') + '_' + year + '.csv';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  window.__kyuyo2 = {
+    openMonth: openMonth, doCalc: doCalc, saveMonth: saveMonth,
+    recalcTotals: recalcTotals, renderPayslip: renderPayslip,
+    showLedger: showLedger, ledgerCsv: ledgerCsv,
+    EARN_ROWS: EARN_ROWS, DED_ROWS: DED_ROWS
+  };
+})();
+</script>
+<script>
+(function () {
+  'use strict';
+  var K = window.__kyuyo, K2 = window.__kyuyo2;
+  var $ = K.$, num = K.num, toast = K.toast;
+
+  /* ---------- タブ ---------- */
+  Array.prototype.forEach.call(document.querySelectorAll('nav.tabs button'), function (b) {
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('nav.tabs button'), function (x) { x.classList.remove('active'); });
+      Array.prototype.forEach.call(document.querySelectorAll('.page'), function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      $('page-' + b.getAttribute('data-page')).classList.add('active');
+      window.scrollTo(0, 0);
+    });
+  });
+
+  /* ---------- 従業員 ---------- */
+  $('empNewBtn').addEventListener('click', function () { K.openEmpForm(null); });
+  $('empSaveBtn').addEventListener('click', K.saveEmpForm);
+  $('empCancelBtn').addEventListener('click', function () { $('empFormCard').style.display = 'none'; });
+  $('empDeleteBtn').addEventListener('click', K.deleteEmp);
+
+  /* ---------- 給与計算 ---------- */
+  $('payLoadBtn').addEventListener('click', K2.openMonth);
+  $('payCalcBtn').addEventListener('click', K2.doCalc);
+  $('paySaveBtn').addEventListener('click', K2.saveMonth);
+  $('payPrintBtn').addEventListener('click', function () {
+    $('payslipCard').classList.add('payslip-preview');
+    window.print();
+    setTimeout(function () { $('payslipCard').classList.remove('payslip-preview'); }, 600);
+  });
+  ['otherEarn', 'otherDed', 'otherEarnName', 'otherDedName'].forEach(function (id) {
+    $(id).addEventListener('input', function () {
+      var c = K.state.lastCalc; if (!c) return;
+      c.earn.other = num($('otherEarn').value);
+      c.ded.otherDed = num($('otherDed').value);
+      var ei = document.querySelector('[data-fld="earn"][data-k="other"]');
+      var di = document.querySelector('[data-fld="ded"][data-k="otherDed"]');
+      if (ei) ei.value = c.earn.other;
+      if (di) di.value = c.ded.otherDed;
+      K2.recalcTotals();
+    });
+  });
+
+  /* ---------- 賃金台帳 ---------- */
+  $('ledgerShowBtn').addEventListener('click', K2.showLedger);
+  $('ledgerPrintBtn').addEventListener('click', function () {
+    $('ledgerCard').classList.add('ledger-print');
+    window.print();
+    setTimeout(function () { $('ledgerCard').classList.remove('ledger-print'); }, 600);
+  });
+  $('ledgerCsvBtn').addEventListener('click', K2.ledgerCsv);
+
+  /* ---------- 設定 ---------- */
+  $('cfgSaveBtn').addEventListener('click', function () {
+    K.readSettingsForm();
+    K.cloudSave();
+  });
+  $('cfgBackupBtn').addEventListener('click', function () {
+    var db = K.getDB();
+    var blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '給与アシスト_バックアップ_' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    toast('バックアップを書き出しました');
+  });
+  $('cfgRestoreBtn').addEventListener('click', function () { $('cfgRestoreFile').click(); });
+  $('cfgRestoreFile').addEventListener('change', function (ev) {
+    var f = ev.target.files[0]; if (!f) return;
+    var fr = new FileReader();
+    fr.onload = function () {
+      try {
+        var d = JSON.parse(fr.result);
+        if (!confirm('バックアップの内容で今のデータを置きかえます。よろしいですか？')) return;
+        var db = K.getDB();
+        db.employees = d.employees || [];
+        db.payrolls = d.payrolls || {};
+        db.settings = d.settings || {};
+        K.fillSettingsForm(); K.renderEmpTable(); K.fillEmpSelects();
+        K.cloudSave();
+        toast('バックアップから戻しました');
+      } catch (e) { toast('このファイルは読めませんでした'); }
+    };
+    fr.readAsText(f);
+    ev.target.value = '';
+  });
+  $('cfgResetBtn').addEventListener('click', function () {
+    if (!confirm('この端末の Firebase 設定を消して、最初の画面に戻します。\n（給与のデータは消えません）')) return;
+    localStorage.removeItem(K.LS_CONF);
+    location.reload();
+  });
+  $('saveCloudBtn').addEventListener('click', function () { K.cloudSave(); });
+
+  /* ---------- 初期設定 ---------- */
+  function parseConfig(text) {
+    var keys = ['apiKey', 'authDomain', 'databaseURL', 'projectId', 'storageBucket', 'messagingSenderId', 'appId', 'measurementId'];
+    var cfg = {}, found = 0;
+    keys.forEach(function (k) {
+      var re = new RegExp('["\']?' + k + '["\']?\\s*:\\s*["\']([^"\']+)["\']');
+      var m = re.exec(text);
+      if (m) { cfg[k] = m[1]; found++; }
+    });
+    return found >= 3 ? cfg : null;
+  }
+
+  $('setupSaveBtn').addEventListener('click', function () {
+    var cfg = parseConfig($('setupConfig').value);
+    var err = $('setupError');
+    if (!cfg || !cfg.apiKey || !cfg.projectId) {
+      err.textContent = '設定が読み取れませんでした。{ } の中身をまるごと貼りつけてください。';
+      return;
+    }
+    var email = $('setupEmail').value.trim();
+    if (!email) { err.textContent = 'ログインID（メールアドレス）を入れてください。'; return; }
+    var dbUrl = $('setupDbUrl').value.trim() || cfg.databaseURL || '';
+    if (!dbUrl) {
+      err.textContent = 'データベースのURLが分かりませんでした。会計ページの設定にある databaseURL を入れてください。';
+      return;
+    }
+    var path = $('setupPath').value.trim() || 'companies/assist/kyuyo';
+    var conf = { config: cfg, email: email, path: path, dbUrl: dbUrl };
+    try { localStorage.setItem(K.LS_CONF, JSON.stringify(conf)); } catch (e) {}
+    location.reload();
+  });
+
+  $('setupSkipBtn').addEventListener('click', function () {
+    try { localStorage.setItem(K.LS_CONF, JSON.stringify({ localOnly: true })); } catch (e) {}
+    K.setLocalOnly(true);
+    $('logoutBtn').style.display = 'none';
+    $('setupGate').classList.add('hidden');
+    K.setSync('ng', 'この端末のみ');
+    startApp();
+  });
+
+  $('reSetupBtn').addEventListener('click', function () {
+    if (!confirm('設定を消して、最初の画面に戻します。よろしいですか？')) return;
+    localStorage.removeItem(K.LS_CONF);
+    location.reload();
+  });
+
+  /* ---------- 起動 ---------- */
+  function startApp() {
+    K.fillSettingsForm();
+    K.renderEmpTable();
+    K.fillEmpSelects();
+    var now = new Date();
+    if (!$('payMonth').value) {
+      $('payMonth').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    }
+    if (!$('ledgerYear').value) $('ledgerYear').value = now.getFullYear();
+    var s = K.settings();
+    $('cfgStatus').textContent = K.getLocalOnly()
+      ? 'いまは この端末だけ にデータを持っています。'
+      : '保存先：' + (K.getFB() ? K.getFB().path : '—');
+  }
+
+  function boot() {
+    K.loadLocal();
+
+    var raw = null;
+    try { raw = localStorage.getItem(K.LS_CONF); } catch (e) {}
+    if (!raw) {
+      $('setupGate').classList.remove('hidden');
+      return;
+    }
+    var conf;
+    try { conf = JSON.parse(raw); } catch (e) { $('setupGate').classList.remove('hidden'); return; }
+    if (conf && conf.localOnly) {
+      K.setLocalOnly(true);
+      $('logoutBtn').style.display = 'none';
+      $('setupGate').classList.add('hidden');
+      $('lockScreen').classList.add('hidden');
+      K.setSync('ng', 'この端末のみ');
+      startApp();
+      return;
+    }
+    K.setFB(conf);
+    $('setupGate').classList.add('hidden');
+    $('lockScreen').classList.remove('hidden');
+    K.setSync('', 'ログイン待ち');
+
+    import('./kaikei-auth.js').then(function (mod) {
+      mod.setupKaikeiAuth({
+        config: conf.config,
+        email: conf.email,
+        onLogin: function () {
+          startApp();
+          K.cloudLoad().then(function () {
+            K.fillSettingsForm(); K.renderEmpTable(); K.fillEmpSelects();
+          });
+        },
+        onLogout: function () { K.setSync('', 'ログイン待ち'); }
+      });
+    }).catch(function (e) {
+      console.warn('[kyuyo] kaikei-auth.js が読み込めません', e);
+      $('lockError').textContent = 'kaikei-auth.js が見つかりません。同じフォルダに置いてください。';
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+</body>
+</html>
