@@ -576,6 +576,7 @@
         <div class="grid3">
           <div class="field"><label>健康保険（％・全体）</label><input type="number" id="cfgRateHealth" step="0.001"></div>
           <div class="field"><label>介護保険（％・全体）</label><input type="number" id="cfgRateKaigo" step="0.001"></div>
+          <div class="field"><label>子ども・子育て支援金（％・全体）</label><input type="number" id="cfgRateKodomo" step="0.001"></div>
           <div class="field"><label>厚生年金（％・全体）</label><input type="number" id="cfgRatePension" step="0.001"></div>
           <div class="field"><label>雇用保険・本人負担（％）</label><input type="number" id="cfgRateKoyo" step="0.001"></div>
         </div>
@@ -593,15 +594,18 @@
       <div class="card">
         <h2>🧮 所得税の計算</h2>
         <div class="hint" style="margin-bottom:14px">
-          源泉所得税は「月額表」を見て決めるのが正しいやり方です。ここでは<b>参考の金額</b>を出すだけなので、
-          明細の金額欄はいつでも手で直せます。<b>提出前に必ず税額表で確認してください。</b>
+          「国税庁の計算方法」は、国税庁が認めている<b>電子計算機用の計算式（令和8年分・月額）</b>で所得税を出します。
+          甲欄は扶養の人数も反映します。税額表と数円ちがうことがありますが、どちらで源泉徴収しても正しい扱いです。<br>
+          乙欄は、月10万5千円未満は3.063％で計算します。それ以上は下の「乙欄のおおよその税率」で出すので、税額表で確かめてください。
+          明細の金額欄はいつでも手で直せます。
         </div>
         <div class="grid2">
           <div class="field">
             <label>参考計算のしかた</label>
             <select id="cfgTaxMode">
-              <option value="manual">計算しない（毎回手で入れる）</option>
+              <option value="nta">国税庁の計算方法（令和8年分・おすすめ）</option>
               <option value="approx">かんたん計算（設定した率で出す）</option>
+              <option value="manual">計算しない（毎回手で入れる）</option>
             </select>
           </div>
           <div class="field"><label>扶養1人あたりの控除額（月・円）</label><input type="number" id="cfgDepDeduction" step="100"></div>
@@ -668,14 +672,15 @@
     address: '',
     closing: 'end',
     payday: '翌月10日',
-    rateHealth: 10.34,   // ％（全体）目安。必ず最新に直すこと
-    rateKaigo: 1.60,     // ％（全体）目安
-    ratePension: 18.30,  // ％（全体）目安
-    rateKoyo: 0.60,      // ％（本人負担）目安
+    rateHealth: 10.13,   // ％（全体）協会けんぽ大阪 令和8年3月分〜
+    rateKaigo: 1.62,     // ％（全体）協会けんぽ 令和8年3月分〜
+    rateKodomo: 0.23,    // ％（全体）子ども・子育て支援金 令和8年4月分〜
+    ratePension: 18.30,  // ％（全体）
+    rateKoyo: 0.50,      // ％（本人負担）一般の事業 令和8年4月〜
     otRate: 1.25,
     nightRate: 0.25,
     holRate: 1.35,
-    taxMode: 'approx',
+    taxMode: 'nta',
     basicDeduction: 88000,
     depDeduction: 31667,
     taxRateKou: 4.2,
@@ -695,6 +700,12 @@
     var s = {};
     for (var k in DEFAULT_SETTINGS) s[k] = DEFAULT_SETTINGS[k];
     for (var k2 in (DB.settings || {})) s[k2] = DB.settings[k2];
+    // 以前の仮の値のまま保存されていたら、令和8年度の値に置きかえる
+    if (s.rateHealth === 10.34) s.rateHealth = DEFAULT_SETTINGS.rateHealth;
+    if (s.rateKaigo === 1.60 || s.rateKaigo === 1.6) s.rateKaigo = DEFAULT_SETTINGS.rateKaigo;
+    if (s.rateKoyo === 0.60 || s.rateKoyo === 0.6) s.rateKoyo = DEFAULT_SETTINGS.rateKoyo;
+    if (s.rateKodomo == null || s.rateKodomo === '') s.rateKodomo = DEFAULT_SETTINGS.rateKodomo;
+    if (s.taxMode === 'approx' && num(s.taxRateKou) === 4.2 && num(s.basicDeduction) === 88000) s.taxMode = 'nta';
     return s;
   }
 
@@ -790,6 +801,7 @@
     $('cfgPayday').value = s.payday;
     $('cfgRateHealth').value = s.rateHealth;
     $('cfgRateKaigo').value = s.rateKaigo;
+    $('cfgRateKodomo').value = s.rateKodomo;
     $('cfgRatePension').value = s.ratePension;
     $('cfgRateKoyo').value = s.rateKoyo;
     $('cfgOtRate').value = s.otRate;
@@ -810,6 +822,7 @@
       payday: $('cfgPayday').value.trim(),
       rateHealth: num($('cfgRateHealth').value),
       rateKaigo: num($('cfgRateKaigo').value),
+      rateKodomo: num($('cfgRateKodomo').value),
       ratePension: num($('cfgRatePension').value),
       rateKoyo: num($('cfgRateKoyo').value),
       otRate: num($('cfgOtRate').value),
@@ -1015,9 +1028,10 @@
   var DED_ROWS = [
     { k: 'health', l: '健康保険' },
     { k: 'kaigo', l: '介護保険' },
+    { k: 'kodomo', l: '子ども・子育て支援金' },
     { k: 'pension', l: '厚生年金' },
     { k: 'koyo', l: '雇用保険' },
-    { k: 'incomeTax', l: '所得税（参考）' },
+    { k: 'incomeTax', l: '所得税' },
     { k: 'residentTax', l: '住民税' },
     { k: 'otherDed', l: 'その他控除' }
   ];
@@ -1043,6 +1057,45 @@
     if (e.type === 'hour') return num(e.base);
     if (e.type === 'day') { var hpd = mh / (md || 21); return num(e.base) / (hpd || 8); }
     return (num(e.base) + num(e.post) + num(e.qual) + num(e.otherAllow)) / (mh || 168);
+  }
+
+  /* ---------- 源泉所得税（令和8年分 電子計算機等の特例・月額） ----------
+     A：社会保険料等控除後の給与等の金額
+     税額 = 課税給与所得金額 ×税率 −控除額（復興特別所得税を含む率）、10円未満四捨五入 */
+  function kouTaxR8(A, deps) {
+    A = Math.floor(num(A));
+    if (A <= 0) return 0;
+    var kyuyo;                                   // 第1表 給与所得控除（1円未満切上げ）
+    if (A <= 158333) kyuyo = 54167;
+    else if (A <= 299999) kyuyo = Math.ceil(A * 0.30 + 6667);
+    else if (A <= 549999) kyuyo = Math.ceil(A * 0.20 + 36667);
+    else if (A <= 708330) kyuyo = Math.ceil(A * 0.10 + 91667);
+    else kyuyo = 162500;
+    var kiso;                                    // 第3表 基礎控除
+    if (A <= 2120833) kiso = 48334;
+    else if (A <= 2162499) kiso = 40000;
+    else if (A <= 2204166) kiso = 26667;
+    else if (A <= 2245833) kiso = 13334;
+    else kiso = 0;
+    var fuyo = 31667 * Math.max(0, num(deps));  // 第2表 配偶者・扶養（源泉控除対象親族1人につき）
+    var B = Math.floor(A - kyuyo - kiso - fuyo); // 課税給与所得金額
+    if (B <= 0) return 0;
+    var t;                                       // 第4表
+    if (B <= 162500) t = B * 0.05105;
+    else if (B <= 275000) t = B * 0.10210 - 8296;
+    else if (B <= 579166) t = B * 0.20420 - 36374;
+    else if (B <= 750000) t = B * 0.23483 - 54113;
+    else if (B <= 1500000) t = B * 0.33693 - 130688;
+    else if (B <= 3333333) t = B * 0.40840 - 237893;
+    else t = B * 0.45945 - 408061;
+    if (t <= 0) return 0;
+    return Math.round(t / 10) * 10;
+  }
+  function otsuTax(A, s) {                        // 月額表 乙欄
+    A = Math.floor(num(A));
+    if (A <= 0) return 0;
+    if (A < 105000) return Math.floor(A * 0.03063);
+    return Math.floor(A * num(s.taxRateOtsu) / 100);
   }
 
   /* ---------- 計算 ---------- */
@@ -1078,14 +1131,19 @@
     if (num(e.shaho)) {
       ded.health = jpRound(num(e.stdHealth) * num(s.rateHealth) / 100 / 2);
       ded.kaigo = num(e.kaigo) ? jpRound(num(e.stdHealth) * num(s.rateKaigo) / 100 / 2) : 0;
+      ded.kodomo = jpRound(num(e.stdHealth) * num(s.rateKodomo) / 100 / 2);
       ded.pension = jpRound(num(e.stdPension) * num(s.ratePension) / 100 / 2);
-    } else { ded.health = 0; ded.kaigo = 0; ded.pension = 0; }
+    } else { ded.health = 0; ded.kaigo = 0; ded.kodomo = 0; ded.pension = 0; }
     ded.koyo = num(e.koyo) ? jpRound(totalEarn * num(s.rateKoyo) / 100) : 0;
 
-    var shakaiKei = ded.health + ded.kaigo + ded.pension + ded.koyo;
+    var shakaiKei = ded.health + ded.kaigo + ded.kodomo + ded.pension + ded.koyo;
     var taxBase = Math.max(0, taxableGross - shakaiKei);
 
-    if (s.taxMode === 'approx') {
+    if (s.taxMode === 'nta') {
+      ded.incomeTax = (e.taxKb === 'otsu')
+        ? otsuTax(taxBase, s)
+        : kouTaxR8(taxBase, num(e.dependents));
+    } else if (s.taxMode === 'approx') {
       if (e.taxKb === 'otsu') {
         ded.incomeTax = Math.floor(taxBase * num(s.taxRateOtsu) / 100);
       } else {
@@ -1127,12 +1185,14 @@
     $('earnRows').innerHTML = build(EARN_ROWS, c.earn, 'earn');
     $('dedRows').innerHTML = build(DED_ROWS, c.ded, 'ded');
     Array.prototype.forEach.call(document.querySelectorAll('[data-fld]'), function (inp) {
-      inp.addEventListener('input', recalcTotals);
+      inp.addEventListener('input', function () {
+        recalcTotals(inp.getAttribute('data-k') !== 'incomeTax');
+      });
     });
-    recalcTotals();
+    recalcTotals(false);
   }
 
-  function recalcTotals() {
+  function recalcTotals(retax) {
     var c = K.state.lastCalc;
     if (!c) return;
     Array.prototype.forEach.call(document.querySelectorAll('[data-fld]'), function (inp) {
@@ -1141,9 +1201,20 @@
     });
     var te = 0, td = 0;
     EARN_ROWS.forEach(function (r) { te += num(c.earn[r.k]); });
+    // 支給や社会保険を手で直したら、所得税も計算しなおす（所得税そのものを直したときは、その金額を使う）
+    var s0 = K.settings(), e0 = K.findEmp(K.state.currentEmpId);
+    if (retax === true && s0.taxMode === 'nta' && e0) {
+      var tg = te - ((e0.commuteTaxfree !== false) ? num(c.earn.commute) : 0);
+      var sk = num(c.ded.health) + num(c.ded.kaigo) + num(c.ded.kodomo) + num(c.ded.pension) + num(c.ded.koyo);
+      var A = Math.max(0, tg - sk);
+      c.ded.incomeTax = (e0.taxKb === 'otsu') ? otsuTax(A, s0) : kouTaxR8(A, num(e0.dependents));
+      c.taxableGross = tg; c.taxBase = A;
+      var ti = document.querySelector('[data-fld="ded"][data-k="incomeTax"]');
+      if (ti) ti.value = c.ded.incomeTax;
+    }
     DED_ROWS.forEach(function (r) { td += num(c.ded[r.k]); });
     c.totalEarn = te; c.totalDed = td; c.net = te - td;
-    c.shakaiKei = num(c.ded.health) + num(c.ded.kaigo) + num(c.ded.pension) + num(c.ded.koyo);
+    c.shakaiKei = num(c.ded.health) + num(c.ded.kaigo) + num(c.ded.kodomo) + num(c.ded.pension) + num(c.ded.koyo);
     c.otherEarnName = $('otherEarnName').value.trim();
     c.otherDedName = $('otherDedName').value.trim();
     $('sumEarn').textContent = yen(te);
@@ -1319,7 +1390,7 @@
         o.extra = num(ea.ot) + num(ea.night) + num(ea.hol) + num(ea.late) + num(ea.other);
         o.commute = num(ea.commute);
         o.earn = num(r.totalEarn);
-        o.sh = num(de.health) + num(de.kaigo) + num(de.pension);
+        o.sh = num(de.health) + num(de.kaigo) + num(de.kodomo) + num(de.pension);
         o.koyo = num(de.koyo);
         o.tax = num(de.incomeTax);
         o.res = num(de.residentTax);
