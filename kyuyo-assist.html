@@ -689,6 +689,7 @@
   var currentEmpId = null;
   var currentMonth = null;
   var lastCalc = null;
+  var cloudEmpty = false;     // クラウドにまだデータが無かったか
 
   function settings() {
     var s = {};
@@ -739,6 +740,7 @@
       if (!db) return false;
       var m = db.__mod;
       return m.get(m.ref(db, FB.path)).then(function (snap) {
+        cloudEmpty = !snap.exists();
         if (snap.exists()) {
           var d = snap.val() || {};
           DB.employees = d.employees || [];
@@ -978,6 +980,8 @@
     TYPE_LABEL: TYPE_LABEL,
     LS_DATA: LS_DATA, LS_CONF: LS_CONF,
     getFB: function () { return FB; },
+    isCloudEmpty: function () { return cloudEmpty; },
+    hasLocalData: function () { return (DB.employees && DB.employees.length) || Object.keys(DB.payrolls || {}).length; },
     setFB: function (v) { FB = v; },
     getLocalOnly: function () { return localOnly; },
     setLocalOnly: function (v) { localOnly = v; },
@@ -1519,7 +1523,7 @@
   });
 
   $('reSetupBtn').addEventListener('click', function () {
-    if (!confirm('設定を消して、最初の画面に戻します。よろしいですか？')) return;
+    if (!confirm('ログイン設定を読みなおします。よろしいですか？')) return;
     localStorage.removeItem(K.LS_CONF);
     location.reload();
   });
@@ -1540,17 +1544,35 @@
       : '保存先：' + (K.getFB() ? K.getFB().path : '—');
   }
 
+  /* アシスト建物管理の既定設定（帳簿アシスト assistbuildingmgmt.html と同じ kaikei-login）
+     → 貼り付け不要。開けばそのままログイン画面になる */
+  var DEFAULT_CONF = {
+    config: {
+      apiKey: "AIzaSyB5VxVt2HmbH7SVpLUzyCYflSAEkg3AqqQ",
+      authDomain: "kaikei-login.firebaseapp.com",
+      projectId: "kaikei-login",
+      storageBucket: "kaikei-login.firebasestorage.app",
+      messagingSenderId: "890962616772",
+      appId: "1:890962616772:web:789a933f2fd03c37e14491"
+    },
+    email: "hm.info.keiri+assist@gmail.com",
+    path: "companies/assist/kyuyo",
+    dbUrl: "https://kaikei-login-default-rtdb.asia-southeast1.firebasedatabase.app"
+  };
+
   function boot() {
     K.loadLocal();
 
     var raw = null;
     try { raw = localStorage.getItem(K.LS_CONF); } catch (e) {}
-    if (!raw) {
-      $('setupGate').classList.remove('hidden');
-      return;
+    var conf = null;
+    if (raw) { try { conf = JSON.parse(raw); } catch (e) { conf = null; } }
+    // 未設定、または以前「この端末だけで使う」を選んでいた端末 → 既定のクラウド設定に切りかえ
+    //（この端末のデータは残り、ログイン後にクラウドへ引っ越しされる）
+    if (!conf || !conf.config || conf.localOnly) {
+      conf = DEFAULT_CONF;
+      try { localStorage.setItem(K.LS_CONF, JSON.stringify(conf)); } catch (e) {}
     }
-    var conf;
-    try { conf = JSON.parse(raw); } catch (e) { $('setupGate').classList.remove('hidden'); return; }
     if (conf && conf.localOnly) {
       K.setLocalOnly(true);
       $('logoutBtn').style.display = 'none';
@@ -1571,8 +1593,14 @@
         email: conf.email,
         onLogin: function () {
           startApp();
-          K.cloudLoad().then(function () {
+          K.cloudLoad().then(function (ok) {
             K.fillSettingsForm(); K.renderEmpTable(); K.fillEmpSelects();
+            // クラウドが空っぽで、この端末にデータがあれば一度だけ引っ越し
+            if (ok && K.isCloudEmpty() && K.hasLocalData()) {
+              K.cloudSave(true).then(function (saved) {
+                if (saved) toast('この端末のデータをクラウドに引っ越しました');
+              });
+            }
           });
         },
         onLogout: function () { K.setSync('', 'ログイン待ち'); }
